@@ -94,8 +94,7 @@ class Trainer:
         if verbose:
             print(f"{self.override_load_to_device=}")
             print(f"{self.overrides_loss=}")
-        if self.is_auto_encoder:
-            print(f"Using auto-encoder trainer...")
+            print(f"{self.is_autoencoder=}")
 
     def train(self, train_loader, test_loaders,
               optimizer, scheduler, regularizer,

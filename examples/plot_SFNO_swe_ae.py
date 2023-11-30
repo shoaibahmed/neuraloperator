@@ -74,7 +74,8 @@ trainer = Trainer(model=model, n_epochs=20,
                   wandb_log=False,
                   log_test_interval=3,
                   use_distributed=False,
-                  verbose=True)
+                  verbose=True,
+                  is_autoencoder=True)
 
 
 # %%
@@ -108,7 +109,7 @@ for index, resolution in enumerate([(32, 64), (64, 128)]):
     # Input x
     x = data['x']
     # Ground-truth
-    y = data['y'][0, ...].numpy()
+    y = data['x'][0, ...].numpy()
     # Model prediction
     x_in = x.unsqueeze(0).to(device)
     out = model(x_in).squeeze()[0, ...].detach().cpu().numpy()
@@ -134,4 +135,4 @@ for index, resolution in enumerate([(32, 64), (64, 128)]):
 
 fig.suptitle('Inputs, ground-truth output and prediction.', y=0.98)
 plt.tight_layout()
-plt.savefig("sfno_swe.png", dpi=300)
+plt.savefig("sfno_swe_ae.png", dpi=300)
