@@ -20,7 +20,8 @@ class Trainer:
                  log_test_interval=1, 
                  log_output=False, 
                  use_distributed=False, 
-                 verbose=False):
+                 verbose=False,
+                 is_autoencoder=False):
         """
         A general Trainer class to train neural-operators on given datasets
 
@@ -41,6 +42,8 @@ class Trainer:
         use_distributed : bool, default is False
             whether to use DDP
         verbose : bool, default is False
+        is_autoencoder: bool, default is False
+            train an auto-encoder by replacing the 'y' in the samples with 'x'
         """
 
         if callbacks:
@@ -52,10 +55,6 @@ class Trainer:
             self.callbacks = []
             self.override_load_to_device = False
             self.overrides_loss = False
-        
-        if verbose:
-            print(f"{self.override_load_to_device=}")
-            print(f"{self.overrides_loss=}")
 
         if self.callbacks:
             self.callbacks.on_init_start(model=model, 
@@ -79,6 +78,7 @@ class Trainer:
         self.device = device
         self.amp_autocast = amp_autocast
         self.data_processor = data_processor
+        self.is_autoencoder = is_autoencoder
 
         if self.callbacks:
             self.callbacks.on_init_end(model=model, 
@@ -90,11 +90,17 @@ class Trainer:
                  log_output=log_output, 
                  use_distributed=use_distributed, 
                  verbose=verbose)
-        
+
+        if verbose:
+            print(f"{self.override_load_to_device=}")
+            print(f"{self.overrides_loss=}")
+        if self.is_auto_encoder:
+            print(f"Using auto-encoder trainer...")
+
     def train(self, train_loader, test_loaders,
-            optimizer, scheduler, regularizer,
+              optimizer, scheduler, regularizer,
               training_loss=None, eval_losses=None):
-        
+
         """Trains the given model on the given datasets.
         params:
         train_loader: torch.utils.data.DataLoader
@@ -147,7 +153,12 @@ class Trainer:
                     sample = self.data_processor.preprocess(sample)
                 else:
                     # load data to device if no preprocessor exists
-                    sample = {k:v.to(self.device) for k,v in sample.items() if torch.is_tensor(v)}
+                    sample = {k: v.to(self.device) for k, v in sample.items() if torch.is_tensor(v)}
+
+                if self.is_autoencoder:  # convert the target after preprocessing
+                    assert 'x' in sample, sample.keys()
+                    assert 'y' in sample, sample.keys()
+                    sample['y'] = sample['x']  # replace the target with the input
 
                 if self.amp_autocast:
                     with amp.autocast(enabled=True):
@@ -180,16 +191,16 @@ class Trainer:
                             loss = training_loss(out.float(), **sample)
                         elif isinstance(out, dict):
                             loss += training_loss(**out, **sample)
-                
+
                 if regularizer:
                     loss += regularizer.loss
-                
+
                 loss.backward()
                 del out
 
                 optimizer.step()
                 train_err += loss.item()
-        
+
                 with torch.no_grad():
                     avg_loss += loss.item()
                     if regularizer:
@@ -262,8 +273,13 @@ class Trainer:
                     sample = self.data_processor.preprocess(sample)
                 else:
                     # load data to device if no preprocessor exists
-                    sample = {k:v.to(self.device) for k,v in sample.items() if torch.is_tensor(v)}
-                    
+                    sample = {k: v.to(self.device) for k, v in sample.items() if torch.is_tensor(v)}
+
+                if self.is_autoencoder:  # convert the target after preprocessing
+                    assert 'x' in sample, sample.keys()
+                    assert 'y' in sample, sample.keys()
+                    sample['y'] = sample['x']  # replace the target with the input
+
                 out = self.model(**sample)
 
                 if self.data_processor is not None:

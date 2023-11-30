@@ -22,6 +22,12 @@ provides all of the tools to do so on your own data.
 NeuralOperators are also resolution invariant, 
 so your trained operator can be applied on data of any resolution.
 
+TODOs
+-----
+
+- Introduce the option to integrate auto-encoding objective in the trainer
+   - Alternatively, add a wrapper over the dataset class to ensure that only (x, x) pairs are returned instead of (x, y)
+- Introduce wrappers around all models to convert them to either VQ-VAE or Fourier-VQ-VAE. 
 
 Installation
 ------------
