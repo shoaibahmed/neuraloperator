@@ -4,9 +4,23 @@ import torch
 from torch.utils.data import DataLoader
 from torch_harmonics.examples import ShallowWaterSolver
 
+
+def load_spherical_swe_datasets(n_train, n_tests, train_resolution=(256, 512),
+                                test_resolutions=[(256, 512)],
+                                device=torch.device('cpu')):
+    """Load the Spherical Shallow Water equations Datasets"""
+    train_dataset = SphericalSWEDataset(dims=train_resolution, num_examples=n_train, device=device)
+    test_datasets =  dict()
+    for (res, n_test) in zip(test_resolutions, n_tests):
+        test_dataset = SphericalSWEDataset(dims=res, num_examples=n_test, device=device)
+        test_datasets[res] = test_dataset
+
+    return train_dataset, test_datasets
+
+
 def load_spherical_swe(n_train, n_tests, batch_size, test_batch_sizes,
-                  train_resolution=(256, 512), test_resolutions=[(256, 512)],
-                  device=torch.device('cpu')):
+                       train_resolution=(256, 512), test_resolutions=[(256, 512)],
+                       device=torch.device('cpu')):
     """Load the Spherical Shallow Water equations Dataloader"""
 
     print(f'Loading train dataloader at resolution {train_resolution} with {n_train} samples and batch-size={batch_size}')
