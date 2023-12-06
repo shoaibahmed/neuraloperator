@@ -264,7 +264,6 @@ class Trainer:
         with torch.no_grad():
             for idx, sample in enumerate(data_loader):
 
-                n_samples += sample['y'].size(0)
                 if self.callbacks:
                     self.callbacks.on_val_batch_start(idx=idx, sample=sample)
 
@@ -305,6 +304,7 @@ class Trainer:
 
                 if self.callbacks:
                     self.callbacks.on_val_batch_end()
+                n_samples += sample['y'].size(0)
     
         for key in errors.keys():
             errors[key] /= n_samples
